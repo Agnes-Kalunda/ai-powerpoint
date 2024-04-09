@@ -23,3 +23,21 @@ const researchAction: AnnotatedFunction<any> = {
     return await researchWithLangGraph(topic); // Call the research function and return its result.
   },
 };
+
+// Define an asynchronous function that handles POST requests.
+export async function POST(req: Request): Promise<Response> {
+    const actions: AnnotatedFunction<any>[] = []; // Initialize an array to hold actions.
+  
+    // Check if a specific environment variable is set, indicating access to certain functionality.
+    if (process.env["TAVILY_API_KEY"]) {
+      actions.push(researchAction); // Add the research action to the actions array if the condition is true.
+    }
+  
+    // Instantiate CopilotBackend with the actions defined above.
+    const copilotKit = new CopilotBackend({
+      actions: actions,
+    });
+  
+    // Use the CopilotBackend instance to generate a response for the incoming request using an OpenAIAdapter.
+    return copilotKit.response(req, new OpenAIAdapter());
+  }
