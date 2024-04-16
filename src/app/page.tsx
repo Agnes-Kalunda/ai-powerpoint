@@ -9,7 +9,7 @@ import "@copilotkit/react-textarea/styles.css";
 
 
 
-import "./style.css";
+import "./styles.css";
 import { Presentation } from "./components/Presentation";
 
 export default function AIPresentation() {
