@@ -1,10 +1,8 @@
-// Import necessary dependencies and components
 import React, { useCallback, useMemo, useState } from "react";
 import { BackwardIcon, ForwardIcon, PlusIcon, SparklesIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { SlideModel, Slide } from "./Slide";
 import { useMakeCopilotActionable, useMakeCopilotReadable, CopilotTask } from "@copilotkit/react-core";
 import { useCopilotContext } from "@copilotkit/react-core";
-
 
 // Define the ActionButton component
 const ActionButton = ({
@@ -117,13 +115,9 @@ export const Presentation = () => {
 
   const generateSlideTask = new CopilotTask({
     instructions: "Make the next slide related to the overall topic of the presentation. It will be inserted after the current slide. Do NOT carry any research",
- });
+  });
 
-
- const [generateSlideTaskRunning, **setGenerateSlideTaskRunning**] = useState(false);
-
-
-  
+  const [generateSlideTaskRunning, setGenerateSlideTaskRunning] = useState(false);
 
   // JSX structure for the Presentation component
   return (
@@ -131,11 +125,11 @@ export const Presentation = () => {
       {/* Render the current slide */}
       <Slide slide={currentSlide} partialUpdateSlide={updateCurrentSlide} />
 
-      {/* Action buttons */}
+      {/* Container for action buttons positioned at the top left corner of the relative parent */}
       <div className="absolute top-0 left-0 mt-6 ml-4 z-30">
-        {/* Add new slide button */}
+        {/* ActionButton to add a new slide. It is disabled when a generateSlideTask is running to prevent concurrent modifications. */}
         <ActionButton
-          disabled={true}
+          disabled={generateSlideTaskRunning}
           onClick={() => {
             const newSlide: SlideModel = {
               title: "Title",
@@ -143,6 +137,7 @@ export const Presentation = () => {
               backgroundImageDescription: "random",
               spokenNarration: "The speaker's notes for this slide.",
             };
+            // Inserts the new slide immediately after the current slide and updates the slide index to point to the new slide.
             setSlides((slides) => [
               ...slides.slice(0, currentSlideIndex + 1),
               newSlide,
@@ -155,28 +150,41 @@ export const Presentation = () => {
           <PlusIcon className="h-6 w-6" />
         </ActionButton>
 
-        {/* Another action button */}
+        {/* ActionButton to generate a new slide based on the current context, also disabled during task running. */}
         <ActionButton
-          disabled={true}
-          onClick={async () => { }}
+          disabled={generateSlideTaskRunning}
+          onClick={async () => { 
+            setGenerateSlideTaskRunning(true); // Indicates the task is starting.
+            await generateSlideTask.run(context); // Executes the task with the current context.
+            setGenerateSlideTaskRunning(false); // Resets the flag when the task is complete.
+          }}
           className="rounded-l-none ml-[1px]"
         >
           <SparklesIcon className="h-6 w-6" />
         </ActionButton>
       </div>
 
-      {/* Action buttons for deleting slides */}
+      {/* Container for action buttons at the top right, including deleting the current slide and potentially other actions. */}
       <div className="absolute top-0 right-0 mt-6 mr-24">
+        {/* ActionButton for deleting the current slide, disabled if a task is running or only one slide remains. */}
         <ActionButton
-          disabled={slides.length === 1}
-          onClick={() => { }}
+          disabled={generateSlideTaskRunning || slides.length === 1}
+          onClick={() => {
+            console.log("delete slide");
+            // Removes the current slide and resets the index to the beginning as a simple handling strategy.
+            setSlides((slides) => [
+              ...slides.slice(0, currentSlideIndex),
+              ...slides.slice(currentSlideIndex + 1),
+            ]);
+            setCurrentSlideIndex((i) => 0);
+          }}
           className="ml-5 rounded-r-none"
         >
           <TrashIcon className="h-6 w-6" />
         </ActionButton>
       </div>
 
-      {/* Display current slide number and total slides */}
+      {/* Display showing the current slide index and the total number of slides. */}
       <div
         className="absolute bottom-0 right-0 mb-20 mx-24 text-xl"
         style={{
@@ -186,22 +194,22 @@ export const Presentation = () => {
         Slide {currentSlideIndex + 1} of {slides.length}
       </div>
 
-      {/* Navigation buttons */}
+      {/* Navigation buttons to move between slides, disabled based on the slide index or if a task is running. */}
       <div className="absolute bottom-0 right-0 mb-6 mx-24">
-        {/* Previous slide button */}
+        {/* Button to move to the previous slide, disabled if on the first slide or a task is running. */}
         <ActionButton
           className="rounded-r-none"
-          disabled={currentSlideIndex === 0}
+          disabled={generateSlideTaskRunning || currentSlideIndex === 0}
           onClick={() => {
             setCurrentSlideIndex((i) => i - 1);
           }}
         >
           <BackwardIcon className="h-6 w-6" />
         </ActionButton>
-        {/* Next slide button */}
+        {/* Button to move to the next slide, disabled if on the last slide or a task is running. */}
         <ActionButton
           className="mr-[1px] rounded-l-none"
-          disabled={currentSlideIndex + 1 === slides.length}
+          disabled={generateSlideTaskRunning || currentSlideIndex + 1 === slides.length}
           onClick={async () => {
             setCurrentSlideIndex((i) => i + 1);
           }}
@@ -212,4 +220,3 @@ export const Presentation = () => {
     </div>
   );
 };
-

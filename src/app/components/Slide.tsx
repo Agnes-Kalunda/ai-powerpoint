@@ -1,7 +1,10 @@
+
+"use client";
+
 import React from 'react';
 import { useMakeCopilotActionable } from "@copilotkit/react-core";
 
-"use client";
+
 
 // Define an interface for the model of a slide, specifying the expected structure of a slide object.
 export interface SlideModel {
